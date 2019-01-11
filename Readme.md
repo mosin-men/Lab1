@@ -7,3 +7,8 @@ Cargo throws a bunch of nasty crap all over the build directory. Before pushing 
 
 ### Notes
 * Rust's `stdin` functionality blows.
+
+### Questions for Class
+Add an answer as a sublist or something as we receive them. Or maybe we can make some sort of Rust wiki so we all have future reference material. I for one plan to use this language at all my future internships to infuriate everyone I meet :-)
+
+* If a function returns `Result<(), ()>`, how come `Ok(())` is a valid return expression, but `Err(())` is not? If you want to return any sort of error, the compiler seems to guide you towards using `return Err(());`.
