@@ -1,5 +1,6 @@
 /* Includes and crate linkages */
 use std::io;
+use std::io::Write; /* so we can have the trait for flush() */
 #[macro_use] extern crate scan_fmt;
 
 /* The StackVec structure with its two member variables. */
@@ -53,6 +54,28 @@ impl<'a, T> StackVec<'a, T> {
         self.size -= 1;
         Ok(&mut self.buffer[self.size])
     }
+
+    fn iter(&'a self) -> StackVecIterator<'a, T> {
+        StackVecIterator{ vector: self, location: 0 }
+    }
+}
+
+struct StackVecIterator<'a, T: 'a> {
+    vector: &'a StackVec<'a, T>, //The vector to iterate across.
+    location: usize, //The element the iterator is currently on.
+}
+
+impl <'a, T: 'a> Iterator for StackVecIterator<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<&'a T> {
+        if self.location >= self.vector.size {
+            None
+        } else {
+            self.location += 1;
+            Some(& self.vector.buffer[self.location - 1])
+        }
+    }
 }
 
 fn main() -> Result<(), ()> {
@@ -60,19 +83,25 @@ fn main() -> Result<(), ()> {
     let mut store: [f64; 5] = [0.0; 5];
     let mut s = StackVec::new(&mut store);
 
-    let mut in_str = String::new();
     loop {
-        /* We have to clear here. Thanks to the borrow checker, we cannot
-           clear the string when its split vector is in scope, and adding an
-           extra scope layer just to house the split vector makes the code
-           unsightly. Clearning here prevents odd scoping issues. */
-        in_str.clear();
-        if let Ok(bytes) = io::stdin().read_line(&mut in_str) {
-            let split_str = in_str.split(" ");
-        }
-        else {
-            println!("Error reading line!");
-            break;
+        print!("Enter a command ('quit' to quit): ");
+        io::stdout().flush().unwrap(); /* panic if failure */
+
+        let mut in_str = String::new();
+
+        if let Err(_) = io::stdin().read_line(&mut in_str) { break; }
+        else if in_str.len() == 0 { break; }
+
+        if in_str.chars().last().unwrap() == '\n' { in_str.pop(); }
+        let mut split_str = in_str.split(" ");
+        match split_str.nth(0).unwrap().as_ref() {
+            "quit"  => break,
+            "print" => cmd_print(&s),
+            "get"   => (),
+            "set"   => (),
+            "push"  => (),
+            "pop"   => (),
+            _       => println!("Invalid command") 
         }
     }
 
@@ -101,4 +130,12 @@ fn main() -> Result<(), ()> {
     */
 
     Ok(())
+}
+
+fn cmd_print(vec : &StackVec<f64>) {
+    let mut i = 0;
+    for item in vec.iter() {
+        println!("[{:03}] = {}", i, item);
+        i += 1;
+    }
 }
