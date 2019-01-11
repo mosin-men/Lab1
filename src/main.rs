@@ -95,9 +95,24 @@ fn main() -> Result<(), ()> {
         if in_str.chars().last().unwrap() == '\n' { in_str.pop(); }
         let mut split_str = in_str.split(" ");
         match split_str.nth(0).unwrap().as_ref() {
+            /* nth(0) will consume that item */
             "quit"  => break,
             "print" => cmd_print(&s),
-            "get"   => (),
+            "get"   => {
+                if let Some(s_idx) = split_str.nth(0) {
+                    let _idx : Option<usize> = match s_idx.parse::<usize>() {
+                        Ok(val) => Some(val),
+                        _       => None
+                    };
+                    if let Some(idx) = _idx {
+                        cmd_get(&s, idx);
+                    } else {
+                        println!("Invlid index");
+                    }
+                } else {
+                    println!("Missing index");
+                }
+            },
             "set"   => (),
             "push"  => (),
             "pop"   => (),
@@ -138,4 +153,8 @@ fn cmd_print(vec : &StackVec<f64>) {
         println!("[{:03}] = {}", i, item);
         i += 1;
     }
+}
+
+fn cmd_get(vec : &StackVec<f64>, idx : usize) {
+    // ...
 }
