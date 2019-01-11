@@ -1,34 +1,50 @@
+/* Includes and crate linkages */
 use std::io;
 #[macro_use] extern crate scan_fmt;
 
+/* The StackVec structure with its two member variables. */
 struct StackVec<'a, T: 'a> {
     buffer: &'a mut [T],
     size: usize,
 }
+
+/* Functions for the StackVec structure. */
 impl<'a, T> StackVec<'a, T> {
+    /* Create a new StackVec from a supplied array. This is a static method. */
     fn new(storage: &'a mut [T]) -> StackVec<'a, T> {
         let s = StackVec {buffer: storage, size: 0};
         return s
     }
 
+    /* Get the USED size of the vector */
     fn size(&self) -> usize {
         self.size
     }
 
+    /* Get the MAX size of the vector */
     fn buffer_size(&self) -> usize {
         self.buffer.len()
     }
 
+    /* Push an object to the rear of the vector. Fail and return Err if
+       capacity has been reached, otherwise add data and increment used 
+       size. */
     fn push(&mut self, data: T) -> Result<(), ()> {
-        if self.size == self.buffer.len() {
+        let sz = self.size;
+        let max_sz = self.buffer.len();
+
+        if sz == max_sz {
             return Err(());
         }
 
-        self.buffer[self.size] = data;
+        self.buffer[sz] = data;
         self.size += 1;
         Ok(())
     }
 
+    /* Get the data stored at the tail of the vector. Fail and return Err if
+       vector is empty. Otherwise, return a mutable reference to the data in
+       question and decrement the used size. */
     fn pop(&mut self) -> Result<& mut T, ()> {
         if self.size == 0 {
             return Err(());
@@ -40,7 +56,7 @@ impl<'a, T> StackVec<'a, T> {
 }
 
 fn main() -> Result<(), ()> {
-    println!("Hello, world!");
+    println!("StackVec");
     let mut store: [f64; 5] = [0.0; 5];
     let mut s = StackVec::new(&mut store);
 
@@ -59,13 +75,17 @@ fn main() -> Result<(), ()> {
             break;
         }
     }
-    /*let bsz = s.buffer_size();
+
+    /* Test code. Uncomment to run some simple, automated tests. Otherwise, 
+       use the above code to run in interactive mode. */
+    /*
+    let bsz = s.buffer_size();
     println!("{}", bsz);
     let sz2 = s.size();
     println!("{}", sz2);
 
     for i in 0..10 {
-        if let Err(()) = s.push(i) {
+        if let Err(()) = s.push(i as f64) {
             println!("Vector is full");
         }
     }
@@ -77,7 +97,8 @@ fn main() -> Result<(), ()> {
         else {
             println!("Vector is empty");
         }
-    }*/
+    }
+    */
 
     Ok(())
 }
