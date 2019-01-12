@@ -3,11 +3,39 @@ use std::io;
 use std::io::Write; /* so we can have the trait for flush() */
 #[macro_use] extern crate scan_fmt;
 
+
+/* The stackvec macro with arms for storage only and 
+ *      storage with list of items to push */
+macro_rules! stackvec {
+    ($storage:expr) => (
+        {
+            let mut ret = StackVec::new($storage);
+            ret
+        }
+    );
+
+    ($storage:expr, $($x:expr),*) => (
+        {
+            let mut ret = StackVec::new($storage);
+            $(
+                /*Might need some error handling here*/
+                ret.push($x);
+
+            )*
+            ret
+        }
+    );
+}
+
+
+
 /* The StackVec structure with its two member variables. */
 struct StackVec<'a, T: 'a> {
     buffer: &'a mut [T],
     size: usize,
 }
+
+
 
 /* Functions for the StackVec structure. */
 impl<'a, T> StackVec<'a, T> {
@@ -81,7 +109,7 @@ impl <'a, T: 'a> Iterator for StackVecIterator<'a, T> {
 fn main() -> Result<(), ()> {
     println!("StackVec");
     let mut store: [f64; 5] = [0.0; 5];
-    let mut s = StackVec::new(&mut store);
+    let mut s = stackvec!(&mut store);
 
     loop {
         print!("Enter a command ('quit' to quit): ");
