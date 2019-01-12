@@ -114,7 +114,16 @@ fn main() -> Result<(), ()> {
                 }
             },
             "set"   => (),
-            "push"  => (),
+            "push"  => {
+                println!("Pushing something.");
+                if let Some(val) = split_str.nth(0) {
+                    let float_val : f64 = val.parse().unwrap();
+                    s.push(float_val);
+                    println!("Pushed back {}", val);
+                } else {
+                    println!("Didn't get a value to push.");
+                }
+            },
             "pop"   => (),
             _       => println!("Invalid command") 
         }
