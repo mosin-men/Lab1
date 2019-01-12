@@ -107,7 +107,7 @@ fn main() -> Result<(), ()> {
                     if let Some(idx) = _idx {
                         cmd_get(&s, idx);
                     } else {
-                        println!("Invlid index");
+                        println!("Invalid index");
                     }
                 } else {
                     println!("Missing index");
