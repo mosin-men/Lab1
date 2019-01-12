@@ -143,16 +143,24 @@ fn main() -> Result<(), ()> {
             },
             "set"   => (),
             "push"  => {
-                println!("Pushing something.");
                 if let Some(val) = split_str.nth(0) {
                     let float_val : f64 = val.parse().unwrap();
-                    s.push(float_val);
-                    println!("Pushed back {}", val);
+                    let res = s.push(float_val);
+                    match res {
+                        Ok(_v) => println!("Pushed back {}", float_val),
+                        Err(_e) => println!("Vector is full."),
+                    }
                 } else {
                     println!("Didn't get a value to push.");
                 }
             },
-            "pop"   => (),
+            "pop"   => {
+                let val = s.pop();
+                match val {
+                    Ok(v) => println!("Popped {}", v),
+                    Err(_e) => println!("Vector is empty."),
+                }
+            },
             _       => println!("Invalid command") 
         }
     }
