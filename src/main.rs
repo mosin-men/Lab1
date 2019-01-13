@@ -19,7 +19,8 @@ macro_rules! stackvec {
             let mut ret = StackVec::new($storage);
             $(
                 /*Might need some error handling here*/
-                ret.push($x);
+                let rv = ret.push($x);
+                rv.expect("Not enough storage for all elements to push in macro");
 
             )*
             ret
