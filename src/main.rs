@@ -9,7 +9,7 @@ use std::io::Write; /* so we can have the trait for flush() */
 macro_rules! stackvec {
     ($storage:expr) => (
         {
-            let mut ret = StackVec::new($storage);
+            let ret = StackVec::new($storage);
             ret
         }
     );
@@ -148,7 +148,7 @@ fn main() -> Result<(), ()> {
                     let float_val : f64 = val.parse().unwrap();
                     let res = s.push(float_val);
                     match res {
-                        Ok(_v) => println!("Pushed back {}", float_val),
+                        Ok(_v) => println!("Pushed back {:.*}", 4, float_val),
                         Err(_e) => println!("Vector is full."),
                     }
                 } else {
@@ -158,7 +158,7 @@ fn main() -> Result<(), ()> {
             "pop"   => {
                 let val = s.pop();
                 match val {
-                    Ok(v) => println!("Popped {}", v),
+                    Ok(v) => println!("Popped {:.*}",4,  v),
                     Err(_e) => println!("Vector is empty."),
                 }
             },
@@ -194,13 +194,28 @@ fn main() -> Result<(), ()> {
 }
 
 fn cmd_print(vec : &StackVec<f64>) {
+    if vec.size() == 0 {
+        println!("Vector is empty.");
+        return;
+    }
     let mut i = 0;
     for item in vec.iter() {
-        println!("[{:03}] = {}", i, item);
+        println!("[{:03}] = {:.*}", i, 4, item);
         i += 1;
     }
 }
 
 fn cmd_get(vec : &StackVec<f64>, idx : usize) {
-    // ...
+    if idx >= vec.size(){
+        println!("Invalid index #{}", idx);
+    }
+    let mut i = 0;
+    for item in vec.iter() {
+        if idx == i{
+            println!("Value at {} = {:.*}", i, 4, item);
+            break;
+        }
+        i += 1;
+    }
 }
+
