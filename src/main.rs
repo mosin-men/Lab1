@@ -1,12 +1,42 @@
 /* Includes and crate linkages */
 use std::io;
+use std::io::Write; /* so we can have the trait for flush() */
 #[macro_use] extern crate scan_fmt;
+
+
+/* The stackvec macro with arms for storage only and 
+ *      storage with list of items to push */
+macro_rules! stackvec {
+    ($storage:expr) => (
+        {
+            let ret = StackVec::new($storage);
+            ret
+        }
+    );
+
+    ($storage:expr, $($x:expr),*) => (
+        {
+            let mut ret = StackVec::new($storage);
+            $(
+                /*Might need some error handling here*/
+                let rv = ret.push($x);
+                rv.expect("Not enough storage for all elements to push in macro");
+
+            )*
+            ret
+        }
+    );
+}
+
+
 
 /* The StackVec structure with its two member variables. */
 struct StackVec<'a, T: 'a> {
     buffer: &'a mut [T],
     size: usize,
 }
+
+
 
 /* Functions for the StackVec structure. */
 impl<'a, T> StackVec<'a, T> {
@@ -47,11 +77,32 @@ impl<'a, T> StackVec<'a, T> {
        question and decrement the used size. */
     fn pop(&mut self) -> Result<& mut T, ()> {
         if self.size == 0 {
-            Err(())
+            return Err(());
         }
-        else {
-            self.size -= 1;
-            Ok(&mut self.buffer[self.size])
+            
+        self.size -= 1;
+        Ok(&mut self.buffer[self.size])
+    }
+
+    fn iter(&'a self) -> StackVecIterator<'a, T> {
+        StackVecIterator{ vector: self, location: 0 }
+    }
+}
+
+struct StackVecIterator<'a, T: 'a> {
+    vector: &'a StackVec<'a, T>, //The vector to iterate across.
+    location: usize, //The element the iterator is currently on.
+}
+
+impl <'a, T: 'a> Iterator for StackVecIterator<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<&'a T> {
+        if self.location >= self.vector.size {
+            None
+        } else {
+            self.location += 1;
+            Some(& self.vector.buffer[self.location - 1])
         }
     }
 }
@@ -59,21 +110,65 @@ impl<'a, T> StackVec<'a, T> {
 fn main() -> Result<(), ()> {
     println!("StackVec");
     let mut store: [f64; 5] = [0.0; 5];
+<<<<<<< HEAD
     let mut s = StackVec::new(&mut store);
     
     let mut in_str = String::new();
+=======
+    let mut s = stackvec!(&mut store);
+
+>>>>>>> 4e9513d262b4ab49452cea9659a6f371762dc604
     loop {
-        /* We have to clear here. Thanks to the borrow checker, we cannot
-           clear the string when its split vector is in scope, and adding an
-           extra scope layer just to house the split vector makes the code
-           unsightly. Clearning here prevents odd scoping issues. */
-        in_str.clear();
-        if let Ok(bytes) = io::stdin().read_line(&mut in_str) {
-            let split_str = in_str.split(" ");
-        }
-        else {
-            println!("Error reading line!");
-            break;
+        print!("Enter a command ('quit' to quit): ");
+        io::stdout().flush().unwrap(); /* panic if failure */
+
+        let mut in_str = String::new();
+
+        if let Err(_) = io::stdin().read_line(&mut in_str) { break; }
+        else if in_str.len() == 0 { break; }
+
+        if in_str.chars().last().unwrap() == '\n' { in_str.pop(); }
+        let mut split_str = in_str.split(" ");
+        match split_str.nth(0).unwrap().as_ref() {
+            /* nth(0) will consume that item */
+            "quit"  => break,
+            "print" => cmd_print(&s),
+            "get"   => {
+                if let Some(s_idx) = split_str.nth(0) {
+                    let _idx : Option<usize> = match s_idx.parse::<usize>() {
+                        Ok(val) => Some(val),
+                        _       => None
+                    };
+                    if let Some(idx) = _idx {
+                        cmd_get(&s, idx);
+                    } else {
+                        println!("Invalid index");
+                    }
+                } else {
+                    println!("Missing index");
+                }
+            },
+            "set"   => (),
+            "push"  => {
+                if let Some(val) = split_str.nth(0) {
+                    let float_val : f64 = val.parse().unwrap();
+                    let res = s.push(float_val);
+                    match res {
+                        Ok(_v) => println!("Pushed back {:.*}", 4, float_val),
+                        Err(_e) => println!("Vector is full."),
+                    }
+                } else {
+                    println!("Didn't get a value to push.");
+                }
+            },
+            "pop"   => {
+                let val = s.pop();
+                match val {
+                    Ok(v) => println!("Popped {:.*}",4,  v),
+                    Err(_e) => println!("Vector is empty."),
+                }
+            },
+            _       => println!("Invalid command") 
         }
     }
 
@@ -103,3 +198,30 @@ fn main() -> Result<(), ()> {
 
     Ok(())
 }
+
+fn cmd_print(vec : &StackVec<f64>) {
+    if vec.size() == 0 {
+        println!("Vector is empty.");
+        return;
+    }
+    let mut i = 0;
+    for item in vec.iter() {
+        println!("[{:03}] = {:.*}", i, 4, item);
+        i += 1;
+    }
+}
+
+fn cmd_get(vec : &StackVec<f64>, idx : usize) {
+    if idx >= vec.size(){
+        println!("Invalid index #{}", idx);
+    }
+    let mut i = 0;
+    for item in vec.iter() {
+        if idx == i{
+            println!("Value at {} = {:.*}", i, 4, item);
+            break;
+        }
+        i += 1;
+    }
+}
+
