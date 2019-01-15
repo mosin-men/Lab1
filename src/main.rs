@@ -119,73 +119,60 @@ fn main() -> Result<(), ()> {
         else if in_str.len() == 0 { break; }
 
         if in_str.chars().last().unwrap() == '\n' { in_str.pop(); }
-        let mut split_str = in_str.split(" ");
-        match split_str.nth(0).unwrap().as_ref() {
-            /* nth(0) will consume that item */
+        let mut split_str: Vec<&str> = in_str.split(" ").collect();
+        match split_str[0] {
             "quit"  => break,
             "print" => cmd_print(&s),
+            /* Get an index. Ensure the command is properly formatted, then
+               perform the actual get operation. */
             "get"   => {
-                if let Some(s_idx) = split_str.nth(0) {
-                    let _idx : Option<usize> = match s_idx.parse::<usize>() {
-                        Ok(val) => Some(val),
-                        _       => None
-                    };
-                    if let Some(idx) = _idx {
-                        cmd_get(&s, idx);
-                    } else {
-                        println!("Invalid index");
+                if split_str.len() != 2 {
+                    println!("Missing index or invalid command format.");
+                }
+                else {
+                    match split_str[1].parse::<usize>() {
+                        Ok(idx)     => cmd_get(&s, idx),
+                        _           => println!("Invalid index type."),
                     }
-                } else {
-                    println!("Missing index");
                 }
             },
             "set"   => (),
+            /* Push a new value to the back of the vector. Make sure the 
+               command is properly formatted, then make sure that the provided
+               value can be converted to an f64, then perform the push. */
             "push"  => {
-                if let Some(val) = split_str.nth(0) {
-                    let float_val : f64 = val.parse().unwrap();
-                    let res = s.push(float_val);
-                    match res {
-                        Ok(_v) => println!("Pushed back {:.*}", 4, float_val),
-                        Err(_e) => println!("Vector is full."),
+                if split_str.len() != 2 {
+                    println!("Missing value or invalid command format.");
+                }
+                else {
+                    match split_str[1].parse::<f64>() {
+                        Ok(val)     => {
+                            if let Err(()) = s.push(val) {
+                                println!("Vector is full.");
+                            }
+                        },
+                        _           => println!("Invalid value or command format.")
                     }
-                } else {
-                    println!("Didn't get a value to push.");
                 }
             },
+            /* Pop a value. If it's already in the vector we know it's an f64,
+               so there's no need for any aggressive type-checking here. &*/
             "pop"   => {
-                let val = s.pop();
-                match val {
-                    Ok(v) => println!("Popped {:.*}",4,  v),
-                    Err(_e) => println!("Vector is empty."),
+                if split_str.len() != 1 {
+                    println!("Invalid command format.");
+                }
+                else {
+                    if let Ok(val) = s.pop() {
+                        println!("Popped {}.", val);
+                    }
+                    else {
+                        println!("Vector is empty.");
+                    }
                 }
             },
-            _       => println!("Invalid command") 
+            _       => println!("Invalid command."),
         }
     }
-
-    /* Test code. Uncomment to run some simple, automated tests. Otherwise, 
-       use the above code to run in interactive mode. */
-    /*
-    let bsz = s.buffer_size();
-    println!("{}", bsz);
-    let sz2 = s.size();
-    println!("{}", sz2);
-
-    for i in 0..10 {
-        if let Err(()) = s.push(i as f64) {
-            println!("Vector is full");
-        }
-    }
-
-    for _i in 0..10 {
-        if let Ok(v) = s.pop() {
-            println!("Popped {}", v);
-        }
-        else {
-            println!("Vector is empty");
-        }
-    }
-    */
 
     Ok(())
 }
@@ -215,4 +202,3 @@ fn cmd_get(vec : &StackVec<f64>, idx : usize) {
         i += 1;
     }
 }
-
