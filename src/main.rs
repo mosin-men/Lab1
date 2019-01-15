@@ -13,7 +13,7 @@ impl<'a, T> StackVec<'a, T> {
     /* Create a new StackVec from a supplied array. This is a static method. */
     fn new(storage: &'a mut [T]) -> StackVec<'a, T> {
         let s = StackVec {buffer: storage, size: 0};
-        return s
+        s
     }
 
     /* Get the USED size of the vector */
@@ -36,7 +36,7 @@ impl<'a, T> StackVec<'a, T> {
         if sz == max_sz {
             return Err(());
         }
-
+            
         self.buffer[sz] = data;
         self.size += 1;
         Ok(())
@@ -47,11 +47,12 @@ impl<'a, T> StackVec<'a, T> {
        question and decrement the used size. */
     fn pop(&mut self) -> Result<& mut T, ()> {
         if self.size == 0 {
-            return Err(());
+            Err(())
         }
-
-        self.size -= 1;
-        Ok(&mut self.buffer[self.size])
+        else {
+            self.size -= 1;
+            Ok(&mut self.buffer[self.size])
+        }
     }
 }
 
@@ -59,7 +60,7 @@ fn main() -> Result<(), ()> {
     println!("StackVec");
     let mut store: [f64; 5] = [0.0; 5];
     let mut s = StackVec::new(&mut store);
-
+    
     let mut in_str = String::new();
     loop {
         /* We have to clear here. Thanks to the borrow checker, we cannot
