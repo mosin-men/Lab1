@@ -56,7 +56,7 @@ impl<'a, T> StackVec<'a, T> {
        size. */
     fn push(&mut self, data: T) -> Result<(), ()> {
         let sz = self.size;
-        let max_sz = self.buffer.len();
+        let max_sz = self.buffer_size();
 
         if sz == max_sz {
             return Err(());
@@ -70,7 +70,7 @@ impl<'a, T> StackVec<'a, T> {
     /* Get the data stored at the tail of the vector. Fail and return Err if
        vector is empty. Otherwise, return a mutable reference to the data in
        question and decrement the used size. */
-    fn pop(&mut self) -> Result<& mut T, ()> {
+    fn pop(&mut self) -> Result<&mut T, ()> {
         if self.size == 0 {
             return Err(());
         }
@@ -147,41 +147,26 @@ fn main() -> Result<(), ()> {
             /* Set the value stored at a specified index, if it's a valid
                index. */
             "set"   => {
-                if let Err(e) = cmd_set(&mut s, &split_str) {
-                    println!("{}", e);
+                match cmd_set(&mut s, &split_str) {
+                    Err(e)  => println!("{}", e),
+                    Ok(v)   => println!("{}", v),
                 }
             },
             /* Push a new value to the back of the vector. Make sure the 
                command is properly formatted, then make sure that the provided
                value can be converted to an f64, then perform the push. */
             "push"  => {
-                if split_str.len() != 2 {
-                    println!("Missing value or invalid command format.");
-                }
-                else {
-                    match split_str[1].parse::<f64>() {
-                        Ok(val)     => {
-                            if let Err(()) = s.push(val) {
-                                println!("Vector is full.");
-                            }
-                        },
-                        _           => println!("Invalid value or command format.")
-                    }
+                match cmd_push(&mut s, &split_str) {
+                    Err(e)  => println!("{}", e),
+                    Ok(v)   => println!("Pushed back {}", v),
                 }
             },
             /* Pop a value. If it's already in the vector we know it's an f64,
                so there's no need for any aggressive type-checking here. &*/
             "pop"   => {
-                if split_str.len() != 1 {
-                    println!("Invalid command format.");
-                }
-                else {
-                    if let Ok(val) = s.pop() {
-                        println!("Popped {}.", val);
-                    }
-                    else {
-                        println!("Vector is empty.");
-                    }
+                match cmd_pop(&mut s, &split_str) {
+                    Ok(v)   => println!("Popped {}", v),
+                    Err(e)  => println!("{}", e),
                 }
             },
             _       => println!("Invalid command."),
@@ -253,4 +238,35 @@ fn cmd_set(s: &mut StackVec<f64>, vec: &Vec<&str>) -> Result<f64, String> {
     /* Now perform the actual set */
     s[idx] = val;
     Ok(val)
+}
+
+fn cmd_push(s: &mut StackVec<f64>, vec: &Vec<&str>) -> Result<f64, String> {
+    /* Check for proper command format. */
+    if vec.len() != 2 {
+        return Err("Improperly formatted command.".to_string());
+    }
+
+    /* Convert value to float. */
+    let val: f64 = match vec[1].parse::<f64>() {
+        Ok(v)   => v,
+        _       => return Err("Could not convert supplied value to f64.".to_string()),
+    };
+
+    /* Perform the push */
+    if s.push(val) == Err(()) {
+        return Err("Vector is full.".to_string());
+    }
+
+    Ok(val)
+}
+
+fn cmd_pop<'a>(s: &'a mut StackVec<f64>, vec: &Vec<&str>) -> Result<&'a mut f64, String> {
+    if vec.len() != 1 {
+        return Err("Improperly formatted command.".to_string());
+    }
+
+    match s.pop() {
+        Ok(v)   => Ok(v),
+        Err(()) => Err("Vector is empty.".to_string()),
+    }
 }
