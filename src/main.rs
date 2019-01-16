@@ -1,7 +1,7 @@
 /* Includes and crate linkages */
 use std::io;
-use std::io::Write; /* so we can have the trait for flush() */
-#[macro_use] extern crate scan_fmt;
+use std::io::Write;                 /* so we can have the trait for flush() */
+use std::ops::{Index, IndexMut};    /* For indexing */
 
 /* The stackvec macro with arms for storage only and 
  *      storage with list of items to push */
@@ -102,12 +102,26 @@ impl <'a, T: 'a> Iterator for StackVecIterator<'a, T> {
     }
 }
 
+/* Indexers for the StackVec. Should be pretty self-explanatory.
+   Except for the second lifetime, that is. */
+impl<'a, T> Index<usize> for StackVec<'a, T> {
+    type Output = T;
+
+    fn index<'b>(&'b self, index: usize) -> &'b T {
+        &self.buffer[index]
+    }
+}
+
+impl<'a, T> IndexMut<usize> for StackVec<'a, T> {
+    fn index_mut<'b>(&'b mut self, index: usize) -> &'b mut T {
+        &mut self.buffer[index]
+    }
+}
+
 fn main() -> Result<(), ()> {
     println!("StackVec");
-    let mut store: [f64; 5] = [0.0; 5];
-    let mut s = StackVec::new(&mut store);
-    let mut in_str = String::new();
-    let mut s = stackvec!(&mut store);
+    let mut store: [f64; 5] = [0.0; 5];     // Storage array for StackVec
+    let mut s = stackvec!(&mut store);      // I wonder what this is?
 
     loop {
         print!("Enter a command ('quit' to quit): ");
@@ -119,24 +133,24 @@ fn main() -> Result<(), ()> {
         else if in_str.len() == 0 { break; }
 
         if in_str.chars().last().unwrap() == '\n' { in_str.pop(); }
-        let mut split_str: Vec<&str> = in_str.split(" ").collect();
+        let split_str: Vec<&str> = in_str.split(" ").collect();
         match split_str[0] {
             "quit"  => break,
             "print" => cmd_print(&s),
             /* Get an index. Ensure the command is properly formatted, then
                perform the actual get operation. */
             "get"   => {
-                if split_str.len() != 2 {
-                    println!("Missing index or invalid command format.");
-                }
-                else {
-                    match split_str[1].parse::<usize>() {
-                        Ok(idx)     => cmd_get(&s, idx),
-                        _           => println!("Invalid index type."),
-                    }
+                if let Err(e) = cmd_get(&s, &split_str) {
+                    println!("{}", e);
                 }
             },
-            "set"   => (),
+            /* Set the value stored at a specified index, if it's a valid
+               index. */
+            "set"   => {
+                if let Err(e) = cmd_set(&mut s, &split_str) {
+                    println!("{}", e);
+                }
+            },
             /* Push a new value to the back of the vector. Make sure the 
                command is properly formatted, then make sure that the provided
                value can be converted to an f64, then perform the push. */
@@ -189,16 +203,54 @@ fn cmd_print(vec : &StackVec<f64>) {
     }
 }
 
-fn cmd_get(vec : &StackVec<f64>, idx : usize) {
+/* Get an element from the StackVec using our fancy-schmancy indexer */
+fn cmd_get(vec : &StackVec<f64>, svec: &Vec<&str>) -> Result<f64, String> {
+    /* Make sure the command is properly formatted.
+       We need exactly two args. */
+    if svec.len() != 2 {
+        return Err("Improperly formatted command".to_string());
+    }
+
+    /* Convert the index to a usize or return Err if impossible. */
+    let idx: usize = match svec[1].parse::<usize>() {
+        Ok(v)   => v,
+        _       => return Err("Could not convert supplied index to an integer.".to_string()),
+    };
+
+    /* Bounds-check */
     if idx >= vec.size(){
-        println!("Invalid index #{}", idx);
+        return Err(format!("Invalid index #{}", idx));
     }
-    let mut i = 0;
-    for item in vec.iter() {
-        if idx == i{
-            println!("Value at {} = {:.*}", i, 4, item);
-            break;
-        }
-        i += 1;
+
+    /* Success output and return */
+    println!("Value at {} = {}", idx, vec[idx]);
+    Ok(vec[idx])
+}
+
+fn cmd_set(s: &mut StackVec<f64>, vec: &Vec<&str>) -> Result<f64, String> {
+    /* Error check and get the index from the string vector */
+    if vec.len() != 3 {
+        return Err(String::from("Improperly formatted command."));
     }
+
+    /* Convert index to integer, or return an error */
+    let idx: usize = match vec[1].parse::<usize>() {
+        Ok(v)   => v,
+        _       => return Err("Could not convert supplied index to integer.".to_string()),
+    };
+
+    /* Convert supplied value to f64, or return an error */
+    let val: f64 = match vec[2].parse::<f64>() {
+        Ok(v)   => v,
+        _       => return Err("Could not convert supplied value to f64.".to_string()),
+    };
+    
+    /* Check to make sure the index is valid */
+    if idx >= s.size() {
+        return Err(format!("Invalid index #{}", idx));
+    }
+
+    /* Now perform the actual set */
+    s[idx] = val;
+    Ok(val)
 }
