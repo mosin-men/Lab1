@@ -147,9 +147,8 @@ fn main() -> Result<(), ()> {
             /* Set the value stored at a specified index, if it's a valid
                index. */
             "set"   => {
-                match cmd_set(&mut s, &split_str) {
-                    Err(e)  => println!("{}", e),
-                    Ok(v)   => println!("{}", v),
+                if let Err(e) = cmd_set(&mut s, &split_str) {
+                    println!("{}", e);
                 }
             },
             /* Push a new value to the back of the vector. Make sure the 
@@ -158,14 +157,14 @@ fn main() -> Result<(), ()> {
             "push"  => {
                 match cmd_push(&mut s, &split_str) {
                     Err(e)  => println!("{}", e),
-                    Ok(v)   => println!("Pushed back {}", v),
+                    Ok(v)   => println!("Pushed back {:.*}", 4, v),
                 }
             },
             /* Pop a value. If it's already in the vector we know it's an f64,
                so there's no need for any aggressive type-checking here. &*/
             "pop"   => {
                 match cmd_pop(&mut s, &split_str) {
-                    Ok(v)   => println!("Popped {}", v),
+                    Ok(v)   => println!("Popped {:.*}", 4, v),
                     Err(e)  => println!("{}", e),
                 }
             },
@@ -208,7 +207,7 @@ fn cmd_get(vec : &StackVec<f64>, svec: &Vec<&str>) -> Result<f64, String> {
     }
 
     /* Success output and return */
-    println!("Value at {} = {}", idx, vec[idx]);
+    println!("Value at {} = {:.*}", idx, 4, vec[idx]);
     Ok(vec[idx])
 }
 
@@ -237,6 +236,7 @@ fn cmd_set(s: &mut StackVec<f64>, vec: &Vec<&str>) -> Result<f64, String> {
 
     /* Now perform the actual set */
     s[idx] = val;
+    println!("Value at {} = {:.*}", idx, 4, val);
     Ok(val)
 }
 
